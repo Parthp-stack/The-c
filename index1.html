@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Queue Management System</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+@keyframes moveBackground {
+    0% { background-position: 0 0; }
+    100% { background-position: 100% 100%; }
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #84fab0, #8fd3f4);
+    z-index: -1;
+    animation: moveBackground 10s linear infinite;
+    background-size: 200% 200%;
+}
+
+.container {
+    width: 80%;
+    margin: 0 auto;
+    padding: 20px;
+    overflow-y: auto;
+    height: calc(100vh - 40px);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+form {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+input[type="text"],
+input[type="number"] {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+}
+
+button:hover {
+    background-color: #218838;
+}
+
+.queue-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+table, th, td {
+    border: 1px solid #ccc;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.delete-btn:hover {
+    background-color: #c82333;
+}
+
+.sidebar {
+    width: 20%;
+    background-color: rgba(135, 206, 250, 0.8);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    margin-right: 20px;
+    height: calc(100vh - 40px);
+    overflow-y: auto;
+}
+
+.sidebar h2 {
+    color: #fff;
+    text-align: center;
+}
+
+.sidebar input {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+    color: #333;
+}
+
+.sidebar button {
+    width: 100%;
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #c1ff07;
+    color: #343a40;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar button:hover {
+    background-color: #cae000;
+}
+
+.total-transactions {
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    text-align: center;
+}
+</style>
+</head>
+<body onload="openFullscreen()">
+
+<div class="sidebar">
+    <h2>Search by Serial Number</h2>
+    <input type="number" id="searchSerialNumber" placeholder="Enter serial number">
+    <button onclick="searchAndModifyBySerial('add')">Add Amount</button>
+    <button onclick="searchAndModifyBySerial('subtract')">Subtract Amount</button>
+    <button onclick="searchAndModifyBySerial('delete')">Delete Customer</button>
+
+    <h2>Search Customer</h2>
+    <input type="number" id="searchCustomerSerial" placeholder="Enter serial number">
+    <button onclick="searchCustomer()">Search</button>
+
+    <h2>Total Transactions</h2>
+    <div class="total-transactions" id="totalTransactions">0</div>
+</div>
+
+<div class="container">
+    <h1>Shopkeeper Management System</h1>
+
+    <form id="queueForm">
+        <h2>Add Customer</h2>
+        <label for="name">Customer Name</label>
+        <input type="text" id="name" name="name" placeholder="Enter customer name" required>
+
+        <label for="transactionAmount">Transaction Amount</label>
+        <input type="number" id="transactionAmount" name="transactionAmount" placeholder="Enter transaction amount" required>
+
+        <label for="itemName">Item Name</label>
+        <input type="text" id="itemName" name="itemName" placeholder="Enter item name" required>
+
+        <label for="itemQuantity">Item Quantity</label>
+        <input type="number" id="itemQuantity" name="itemQuantity" placeholder="Enter item quantity" required>
+
+        <button type="button" onclick="addCustomer()">Add to Queue</button>
+    </form>
+
+    <div class="queue-container" id="queueContainer">
+        <h2>Customers in Queue</h2>
+        <table id="queueTable">
+            <thead>
+                <tr>
+                    <th>Sr.no</th>
+                    <th>Customer Name</th>
+                    <th>Transaction Amount</th>
+                    <th>Items</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody id="queueList">
+                <!-- Queue items will be added here dynamically -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function openFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.mozRequestFullScreen) {
+        elem.mozRequestFullScreen();
+    } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+    }
+}
+
+let queue = [];
+let totalTransactionAmount = 0;
+
+function addCustomer() {
+    const name = document.getElementById('name').value;
+    const transactionAmount = document.getElementById('transactionAmount').value;
+    const itemName = document.getElementById('itemName').value;
+    const itemQuantity = document.getElementById('itemQuantity').value;
+
+    if (name && transactionAmount && itemName && itemQuantity) {
+        const customer = {
+            name: name,
+            transactionAmount: parseInt(transactionAmount),
+            items: [{ itemName: itemName, itemQuantity: parseInt(itemQuantity) }]
+        };
+
+        if (queue.length < 10) {
+            queue.push(customer);
+            totalTransactionAmount += customer.transactionAmount;
+            displayQueue();
+            updateTotalTransactions();
+            document.getElementById('queueForm').reset();
+        } else {
+            alert("Queue is full! Cannot add more customers.");
+        }
+    }
+}
+
+function updateTotalTransactions() {
+    document.getElementById('totalTransactions').textContent = totalTransactionAmount;
+}
+
+function searchAndModifyBySerial(action) {
+    const serialNumber = document.getElementById('searchSerialNumber').value;
+    const customerIndex = parseInt(serialNumber) - 1;
+
+    if (customerIndex < 0 || customerIndex >= queue.length) {
+        alert("Invalid serial number!");
+        return;
+    }
+
+    if (action === 'delete') {
+        deleteCustomer(customerIndex);
+    } else {
+        const amount = prompt("Enter the amount:");
+        const itemName = prompt("Enter the item name:");
+        const itemQuantity = prompt("Enter the item quantity:");
+
+        if (amount && itemName && itemQuantity && !isNaN(amount) && !isNaN(itemQuantity)) {
+            const parsedAmount = parseInt(amount);
+            const parsedQuantity = parseInt(itemQuantity);
+
+            if (action === 'add') {
+                queue[customerIndex].transactionAmount += parsedAmount;
+                totalTransactionAmount += parsedAmount;
+                queue[customerIndex].items.push({ itemName: itemName, itemQuantity: parsedQuantity });
+            } else if (action === 'subtract') {
+                queue[customerIndex].transactionAmount -= parsedAmount;
+                totalTransactionAmount -= parsedAmount;
+            }
+            displayQueue();
+            updateTotalTransactions();
+        }
+    }
+}
+
+function deleteCustomer(index) {
+    if (index > -1) {
+        totalTransactionAmount -= queue[index].transactionAmount;
+        queue.splice(index, 1);
+        displayQueue();
+        updateTotalTransactions();
+    }
+}
+
+function displayQueue() {
+    const queueList = document.getElementById('queueList');
+    queueList.innerHTML = '';
+
+    queue.forEach((customer, index) => {
+        const row = document.createElement('tr');
+
+        const cellIndex = document.createElement('td');
+        cellIndex.textContent = index + 1;
+
+        const cellName = document.createElement('td');
+        cellName.textContent = customer.name;
+
+        const cellAmount = document.createElement('td');
+        cellAmount.textContent = customer.transactionAmount;
+
+        const cellItems = document.createElement('td');
+        customer.items.forEach(item => {
+            const itemText = document.createElement('div');
+            itemText.textContent = `${item.itemName} (Qty: ${item.itemQuantity})`;
+            cellItems.appendChild(itemText);
+        });
+
+        const cellDelete = document.createElement('td');
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.classList.add('delete-btn');
+        deleteButton.onclick = (event) => {
+            event.stopPropagation();
+            deleteCustomer(index);
+        };
+        cellDelete.appendChild(deleteButton);
+
+        row.appendChild(cellIndex);
+        row.appendChild(cellName);
+        row.appendChild(cellAmount);
+        row.appendChild(cellItems);
+        row.appendChild(cellDelete);
+        queueList.appendChild(row);
+    });
+}
+
+function searchCustomer() {
+    const serialNumber = document.getElementById('searchCustomerSerial').value;
+    const customerIndex = parseInt(serialNumber) - 1;
+
+    if (customerIndex < 0 || customerIndex >= queue.length) {
+        alert("Invalid serial number!");
+        return;
+    }
+
+    const customer = queue[customerIndex];
+    let itemsList = customer.items.map(item => `Item: ${item.itemName}, Quantity: ${item.itemQuantity}`).join('\n');
+    alert(`Customer Found:\nName: ${customer.name}\nTransaction Amount: ${customer.transactionAmount}\nItems:\n${itemsList}`);
+}
+</script>
+</body>
+</html>
